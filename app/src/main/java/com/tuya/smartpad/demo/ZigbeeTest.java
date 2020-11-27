@@ -14,19 +14,19 @@ public class ZigbeeTest {
 
     private String getTestString(int id) {
         if(id == ZigbeeTestSuit.TEST_OK) {
-            return "测试成功";
+            return "test success";
         } else if(id == ZigbeeTestSuit.TEST_VERSION_FAILED) {
-            return "获取版本失败";
+            return "failed to get version";
         } else if(id == ZigbeeTestSuit.TEST_SEND_FAILED) {
-            return "发送失败";
+            return "send failed";
         } else if(id == ZigbeeTestSuit.TEST_RECV_FAILED) {
-            return "接收失败";
+            return "recv failed";
         } else if(id == ZigbeeTestSuit.TEST_START_FAILED) {
-            return "网关启动失败";
+            return "start service failed";
         } else if (id == ZigbeeTestSuit.TEST_PARAM_ERROR) {
-            return "参数错误";
+            return "param invalid";
         }
-        return "未知错误";
+        return "unkown error";
     }
     public interface OnTestCompletion {
         void onTestResult(String result);
@@ -49,26 +49,24 @@ public class ZigbeeTest {
                 //do something
             }
         });
-        //启动大概要将近3秒时间，因此设计成异步的，测试结果在回调中返回。
-        //启动之后在10s内发送接收zigbee数据包，如果能发送能接收就判定功能OK，否则测试不过。
 
         String filedirs = mContext.getFilesDir().getAbsolutePath();
         Log.i(TAG, "file dir:" + filedirs);
         ZigbeeTestSuit.Config config = new ZigbeeTestSuit.Config();
-        config.mPath = filedirs;//路径保证可读写，测试可能不用，但是初始化复用了产品代码，可能会做检测。
-        config.mProductKey = "keyuqugcq8rrtadw";//按实际填写
-        config.mUUID = "tuyae2f120f1963c5482";//修改成设备uuid
-        config.mAuthKey = "QakBUcyw4le9hetp3K6CfKIhgInYfji2";//修改成设备authkey
-        config.mVersion = "1.0.0";//按实际填写
-        config.mSerialPort = "/dev/ttyS5";//按实际接线修改一下。
-        config.mTempDir = filedirs;//路径保证可读写，测试可能不用，但是初始化复用了产品代码，可能会做检测。
-        config.mBinDir = filedirs;//路径保证可读写，测试可能不用，但是初始化复用了产品代码，可能会做检测。
-        config.mIsCTS = true; //带流控设置成true，否则false。
+        config.mPath = filedirs;//make sure directory is created and permissions of writting and reading are granted
+        config.mProductKey = "firmwarekey";//firmware key or product id
+        config.mUUID = "uuid";//uuid
+        config.mAuthKey = "authkey";// authkey
+        config.mVersion = "1.0.0";//software version
+        config.mSerialPort = "/dev/ttyS5";//uart used communicating with zigbee module
+        config.mTempDir = filedirs;//make sure directory is created and permissions of writting and reading are granted。
+        config.mBinDir = filedirs;//make sure directory is created and permissions of writting and reading are granted
+        config.mIsCTS = true; //
         config.mIsOEM = true;
 
-        config.mZigbeeChannel = 12; //信道，和zigbee dongle保持一致
-        config.mPackageCount = 20;  //发送多少个测试包。
-        config.mTestTime = 10; //测试时长,按秒计算。
+        config.mZigbeeChannel = 12; //channel, stay same with zigbee dongle
+        config.mPackageCount = 20;  //pakcages sent during test。
+        config.mTestTime = 10; //how munch time the test will last by second。
         Log.i(TAG, "bin dir:" + config.mBinDir + ", file dir:" + filedirs);
 
         zigbeeTest.tuyaZigbeeTest(config);

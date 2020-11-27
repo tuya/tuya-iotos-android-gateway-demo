@@ -27,12 +27,13 @@ public class PermissionUtils implements  ActivityCompat.OnRequestPermissionsResu
 
         Log.d(TAG, "verifyStoragePermissions");
         try {
-            //检测是否有写的权限
+            //check if write permission is granted
             int permission = ActivityCompat.checkSelfPermission(activity,
                     "android.permission.WRITE_EXTERNAL_STORAGE");
             Log.d(TAG, "permission:" + permission +", " + PackageManager.PERMISSION_GRANTED);
             if (permission != PackageManager.PERMISSION_GRANTED) {
                 // 没有写的权限，去申请写的权限，会弹出对话框
+                // write permission is not granted, show a dialog to request for it
                 ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
             } else {
                 mAccessStorageGranted = true;

@@ -26,47 +26,44 @@ class SpeechTestActivity : Activity() {
     private fun init() {
         try {
             helper = SpeechHelper(this, "/sdcard/tuya_speech_config/", object : OnSpeechCallback {
-
                 override fun onDeInitComplete() {
-                    TODO("语音助手关闭成功")
+                    TODO("SpeechHelper closed successfully.")
                 }
 
                 override fun onInitComplete() {
-                    TODO("语音助手开启成功")
+                    TODO("SpeechHelper initialized successfully")
                 }
 
                 override fun onDeInitError(errMsg: String) {
-                    TODO("语音助手关闭报错：errMsg 错误信息")
+                    TODO("SpeechHelper close error：errMsg")
                 }
 
                 override fun onCommand(command: String, data: String) {
-                    TODO("收到离线命令： command 命令名称；data：命令数据")
+                    TODO("Received offline command")
                 }
 
                 override fun getCommands(): Array<String> {
-                    TODO("离线命令注册")
+                    TODO("Offline commands regist")
                 }
 
                 override fun onInitError(errMsg: String) {
-                    TODO("开启失败：errMsg 错误信息")
+                    TODO("SpeechHelper initialization failed：errMsg")
                 }
 
                 override fun onASRError(errMsg: String) {
-                    TODO("识别错误：errMsg 错误信息")
+                    TODO("ASRError：errMsg")
                 }
 
                 override fun onPermissionDenied() {
-                    TODO("权限不足")
+                    TODO("Permission Denied")
                 }
 
                 override fun onStartListening() {
-                    Log.d(TAG, "onStartListening");
-                    TODO("正在聆听语音")
+                    TODO("Listening")
                 }
 
                 override fun onWakeup(): Boolean {
-                    Log.d(TAG, "onWakeup");
-                    TODO("是否拦截唤醒后的操作：true 拦截 false不拦截；使用场景，根据需求动态控制语音响应，开启拦截语音唤醒后无响应")
+                    TODO("Wake up. Return true to intercept start listening; return false to not intercept")
                 }
 
                 override fun onSpeechBeginning(errCode: Int) {
@@ -78,7 +75,7 @@ class SpeechTestActivity : Activity() {
                 }
 
                 override fun onResponse(success: Boolean, isDialog: Boolean, audioPath: ArrayList<String>?) {
-                    TODO("收到云端回复： success 是否成功回复；audioPath 回复音频文件的路径")
+                    TODO("Received cloud response")
                 }
             }, 10000, "onlyonekey")
         } catch (e: Exception) {

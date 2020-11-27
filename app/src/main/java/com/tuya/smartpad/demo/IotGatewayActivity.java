@@ -47,27 +47,27 @@ public class IotGatewayActivity extends Activity {
         mIotGateway = TuyaIotGateway.getInstance();
         mIotGateway.setGatewayListener(mGatewayListener);
 
-        //OTA升级回调
+        //OTA upgrade callbacks
         mIotGateway.setUpgradeCallback(new UpgradeEventCallback() {
             @Override
             public void onUpgradeInfo(String version) {
-                // TODO: 2020-02-28 收到新版本信息 主动开始下载
+                // need to upgrade
                 mIotGateway.confirmUpgradeDownload();
             }
 
             @Override
             public void onUpgradeDownloadStart() {
-                // TODO: 2020-02-18 开始升级文件下载
+                // start to download upgrade package
             }
 
             @Override
             public void onUpgradeDownloadUpdate(int progress) {
-                // TODO: 2020-02-18 下载进度
+                // download processing
             }
 
             @Override
             public void upgradeFileDownloadFinished(boolean success) {
-                // TODO: 2020-02-18 下载完成 主动触发安装
+                // download completed, install it
                 if (success) {
                     mIotGateway.confirmUpgradeInstall();
                 }
@@ -89,13 +89,6 @@ public class IotGatewayActivity extends Activity {
             mLogDaemon.stop();
         }
         finishAffinity();
-        // 恢复设置，需要杀死进程，当然也可以重启设备
-        /**
-         * 重启应用或者直接重启设备doReboot
-         * 方法一、用android.os.Process.killProcess，封装在doRebootApplicai依次杀掉子进程
-         * 方法二、用 am force-stop，可以杀子进程，但是需要system app才有权限。
-         */
-        doRebootApplicaion();
     }
 
 
@@ -138,9 +131,9 @@ public class IotGatewayActivity extends Activity {
         }
 
         config.mPath = storageDir;
-        config.mFirmwareKey =  "ddddd";
-        config.mUUID =  "d3465e05ee453bea";
-        config.mAuthKey ="5sGSglzY6QQJzq8UEUMwHym3TCfKDx7z";
+        config.mFirmwareKey =  "firmwarekey";
+        config.mUUID =  "uuid";
+        config.mAuthKey ="authkey";
         config.mVersion = "1.0.0";
         config.mPackageName = getPackageName();
         config.mSerialPort = "/dev/ttyS3";
@@ -176,7 +169,6 @@ public class IotGatewayActivity extends Activity {
         @Override
         public void onReset(int type) {
             Log.v(TAG, "onReset " + type);
-            // 重启设备或者重启进程，注意如果重启进程，请确保底层网关库会 停用zigbee 子进程。
             finish();
         }
 
@@ -215,17 +207,12 @@ public class IotGatewayActivity extends Activity {
         @Override
         public String onGetIP() {
             String ipAddress = getLocalIpAddress();
-//                Log.v(TAG, "onGetIP " + ipAddress);
             return ipAddress;
         }
         @Override
         public void onStartSuccess() {
             Log.v(TAG, "onStartSuccess");
             getToken();
-
-            // start成功后抓当前进程和子进程的日志。
-//                mLogDaemon.setExpectation(android.os.Process.myPid(),  null, true);
-//                mLogDaemon.start();
         }
 
         @Override
@@ -252,18 +239,18 @@ public class IotGatewayActivity extends Activity {
 
         @Override
         public void onZigbeeServiceDied() {
-            // zigbee 服务挂了，重启app或者重启设备
+            // zigbee has died, restart app
             Log.d(TAG, "onZigbeeServiceDied");
             doRebootApplicaion();
         }
 
         @Override
         public void onZigbeeError() {
-            //zigbee 有问题，找硬件同事瞅瞅, app上提示一下。
+            //zigbee went wrong
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(mContext, "zigbee 出错，请检查设备", Toast.LENGTH_LONG).show();
+                    Toast.makeText(mContext, "zigbee error, please check zigbee module", Toast.LENGTH_LONG).show();
                 }
             });
         }
@@ -273,17 +260,6 @@ public class IotGatewayActivity extends Activity {
         String logPath = getExternalFilesDir("log").getAbsolutePath();
         //logPath/gateawy.log
         mLogDaemon = new LogDaemon(logPath, 10, 3 * 1024, "gateway");
-
-        // 用法1. 收集当前进程和子进程的日志，每个进程一份日志，对于网关还说，tuyaIotStart之后底层库起了一个新进程，所以
-        // mLogDaemon.start() 应该在tuyaIotStart的回调成功之后再调用，但是那时候再start会丢失应用启动的一部分日志。
-        // mLogDaemon.setExpectation(android.os.Process.myPid(), null, false);
-
-        // 用法2. 收集当前进程中，tag为tuya或者ty_zb的log，一份日志。
-        // mLogDaemon.setExpectation(android.os.Process.myPid(), "tuya,ty_zb", false);
-
-        // 用法3. 收集当前进程和子进程以及tag为tuya或者ty_zb的log，每个进程一份日志，外加tag一份日志。
-        // 这个畸形涉及为了解决 用法1中的缺陷，启动后可以抓到全部日志。
-        // mLogDaemon.setExpectation(android.os.Process.myPid(), "tuya,ty_zb", true);
 
         PermissionUtils.setOnRequestPermissionsResult(new OnRequestPermissionsResult() {
             @Override
@@ -372,7 +348,7 @@ public class IotGatewayActivity extends Activity {
     }
 
     private void getToken() {
-        String token = ""; //获取token
+        String token = ""; //get token from server and pass it to gateway sdk
         Log.v(TAG, "token is " + token);
         mIotGateway.tuyaIotBindToken(token);
     }
