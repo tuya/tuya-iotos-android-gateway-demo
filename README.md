@@ -1,6 +1,6 @@
 English | [简体中文](./README_cn.md)
 
-# tuya-iotos-android-gateway-demo
+# Tuya Android Device Gateway SDK Demo
 demo codes for Tuya Android Device Gateway SDK.
 
 
