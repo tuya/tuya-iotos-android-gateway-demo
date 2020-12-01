@@ -1,6 +1,6 @@
 [English](./README.md) | 简体中文
 
-# tuya-iotos-android-gateway-demo
+# Tuya Android Device Gateway SDK
 涂鸦安卓设备端网关SDK demo
 
 ## 介绍
