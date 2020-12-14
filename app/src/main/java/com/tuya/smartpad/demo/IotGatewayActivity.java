@@ -12,12 +12,14 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.tuya.smart.android.demo.speech.SpeechTestActivity;
-import com.tuya.smart.iotgateway.gateway.TuyaIotGateway;
-import com.tuya.smart.iotgateway.logutils.LogDaemon;
-import com.tuya.smart.iotgateway.upgrade.UpgradeEventCallback;
-import com.tuya.smart.iotgateway.utils.ProcessUtils;
+import com.tuya.libgateway.TuyaGatewaySdk;
+import com.tuya.libgateway.interfaces.GatewayCallbacks;
+import com.tuya.libgateway.model.GatewayConfig;
+import com.tuya.libgateway.upgrade.UpgradeEventCallback;
+import com.tuya.libiot.TuyaIotSdk;
+import com.tuya.libiot.model.DataPoint;
+import com.tuya.smart.ai.common.utils.LogDaemon;
+import com.tuya.smart.ai.common.utils.ProcessUtils;
 
 import java.io.File;
 import java.net.Inet4Address;
@@ -37,22 +39,28 @@ public class IotGatewayActivity extends Activity {
     private Context getContext() {
         return mContext;
     }
+
+    private TuyaGatewaySdk mGateway;
+    private TuyaIotSdk mIoT;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mContext = this;
 
+        mIoT = TuyaIotSdk.getInstance();
+
         //############################################
-        mIotGateway = TuyaIotGateway.getInstance();
-        mIotGateway.setGatewayListener(mGatewayListener);
+        mGateway = TuyaGatewaySdk.getInstance();
+        mGateway.setGatewayCallbacks(mGatewayCallbacks);
 
         //OTA upgrade callbacks
-        mIotGateway.setUpgradeCallback(new UpgradeEventCallback() {
+        mGateway.setUpgradeCallback(new UpgradeEventCallback() {
             @Override
             public void onUpgradeInfo(String version) {
                 // need to upgrade
-                mIotGateway.confirmUpgradeDownload();
+                mGateway.confirmUpgradeDownload("/sdcard/tuya_gateway/");
             }
 
             @Override
@@ -69,7 +77,7 @@ public class IotGatewayActivity extends Activity {
             public void upgradeFileDownloadFinished(boolean success) {
                 // download completed, install it
                 if (success) {
-                    mIotGateway.confirmUpgradeInstall();
+                    mGateway.confirmUpgradeInstall();
                 }
             }
 
@@ -105,13 +113,11 @@ public class IotGatewayActivity extends Activity {
         super.onStop();
     }
 
-    private TuyaIotGateway mIotGateway;
-
     private void startGateway() {
         String filedirs = getFilesDir().getAbsolutePath();
         Log.i(TAG, "file dir:" + filedirs);
 
-        TuyaIotGateway.Config config = new TuyaIotGateway.Config();
+        GatewayConfig config = new GatewayConfig();
 
         String storageDir = filedirs + File.separator + "storage" + File.separator;
         File file = new File(storageDir);
@@ -144,7 +150,7 @@ public class IotGatewayActivity extends Activity {
         config.mIsCTS = true;
         config.mIsOEM = true;
 
-        mIotGateway.tuyaIotStart(this, config);
+        mGateway.gatewayStart(this, config);
         Log.v(TAG, "onStartClick over");
 
         findViewById(R.id.button_start).setEnabled(false);
@@ -154,7 +160,7 @@ public class IotGatewayActivity extends Activity {
         findViewById(R.id.speach_test).setEnabled(true);
     }
 
-    TuyaIotGateway.GatewayListener mGatewayListener  = new TuyaIotGateway.GatewayListener() {
+    GatewayCallbacks mGatewayCallbacks  = new GatewayCallbacks() {
         @Override
         public void onStatusChanged(int status) {
             Log.v(TAG, "onStatusChanged " + status);
@@ -174,7 +180,7 @@ public class IotGatewayActivity extends Activity {
 
         @Override
         public void onDataPointCommand(int type, int dttType, String cid, String multicastId,
-                                       TuyaIotGateway.DataPoint[] dataPoint) {
+                                       DataPoint[] dataPoint) {
             Log.v(TAG, "onDataPointCommand " + type);
             Log.v(TAG, "type:" + type + ", dttType:" + dttType + ", cid:" + cid + ", multicast Id:" + multicastId);
             for (int i = 0; i < dataPoint.length; i++) {
@@ -185,22 +191,14 @@ public class IotGatewayActivity extends Activity {
         @Override
         public void onNetworkStatus(int status) {
             Log.i(TAG, "onNetworkStatus " + status);
-            if (status == TuyaIotGateway.GatewayListener.NETWORK_STATUS_CLOUD_CONNECTED) {
+            if (status == TuyaGatewaySdk.Const.NETWORK_STATUS_CLOUD_CONNECTED) {
                 Log.v(TAG, "connected to cloud");
 
-                String id = mIotGateway.tuyaIotGetId();
+                String id = mIoT.getId();
                 Log.d(TAG, "gateway id is " + id);
-            } else if (status == TuyaIotGateway.GatewayListener.NETWORK_STATUS_LAN_CONNECTED) {
+            } else if (status == TuyaGatewaySdk.Const.NETWORK_STATUS_LAN_CONNECTED) {
                 Log.v(TAG, "network connected");
             } else {
-            }
-        }
-
-        @Override
-        public void onCloudMedia(TuyaIotGateway.MediaAttribute[] mediaAttributes) {
-            Log.v(TAG, "onCloudMedia");
-            for (TuyaIotGateway.MediaAttribute mediaAttribute : mediaAttributes) {
-                dumpMediaAttribute(mediaAttribute);
             }
         }
 
@@ -235,24 +233,6 @@ public class IotGatewayActivity extends Activity {
             WifiInfo info = manager.getConnectionInfo();
             String address = info.getMacAddress();
             return address;
-        }
-
-        @Override
-        public void onZigbeeServiceDied() {
-            // zigbee has died, restart app
-            Log.d(TAG, "onZigbeeServiceDied");
-            doRebootApplicaion();
-        }
-
-        @Override
-        public void onZigbeeError() {
-            //zigbee went wrong
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(mContext, "zigbee error, please check zigbee module", Toast.LENGTH_LONG).show();
-                }
-            });
         }
     };
 
@@ -295,13 +275,13 @@ public class IotGatewayActivity extends Activity {
         } else if(v == findViewById(R.id.button_reset)) {
             Log.v(TAG, "onResetClick");
             findViewById(R.id.speach_test).setEnabled(false);
-            mIotGateway.tuyaIotReset();
+            mGateway.gatewayReset();
         } else if(v == findViewById(R.id.button_reboot)) {
             Log.v(TAG, "onRebootClick");
             doReboot();
         } else if(v == findViewById(R.id.button_getlog)) {
             Log.v(TAG, "onSignOutClick");
-            Log.d(TAG, "id: " + mIotGateway.tuyaIotGetId());
+            Log.d(TAG, "id: " + mIoT.getId());
             mLogDaemon.getLogDir();
             ArrayList<String> files = mLogDaemon.getLogFiles();
             for(String str:files) {
@@ -342,15 +322,16 @@ public class IotGatewayActivity extends Activity {
 //
 //        mIotGateway.getUpgradeHelper().upgradeAPP(apkPath, apkPackage);
 
-        mIotGateway.confirmUpgradeInstall();
+        mGateway.confirmUpgradeInstall();
 //        UpgradeHelper helper = new UpgradeHelper(this, "", "", null);
 //        helper.upgradeROM("1598609170", "/sdcard/update.zip");
     }
 
     private void getToken() {
-        String token = ""; //get token from server and pass it to gateway sdk
+        // TODO: get token from server and pass it to gateway sdk
+        String token = "";
         Log.v(TAG, "token is " + token);
-        mIotGateway.tuyaIotBindToken(token);
+        mGateway.gatewayBindToken(token);
     }
 
 
@@ -371,37 +352,18 @@ public class IotGatewayActivity extends Activity {
         return null;
     }
 
-    private void dumpDataPoint(TuyaIotGateway.DataPoint dataPoint) {
+    private void dumpDataPoint(DataPoint dataPoint) {
         Log.d(TAG, "id         :" + dataPoint.mId);
         Log.d(TAG, "type       :" + dataPoint.mType);
         Log.d(TAG, "timestamp  :" + dataPoint.mTimeStamp);
         Log.d(TAG, "data:" + dataPoint.mData);
-        if(dataPoint.mType == TuyaIotGateway.DataPoint.TYPE_BOOL) {
+        if(dataPoint.mType == DataPoint.TYPE_BOOL) {
             Log.d(TAG, "bool       :" + dataPoint.mData );
-        } else if(dataPoint.mType == TuyaIotGateway.DataPoint.TYPE_STRING) {
+        } else if(dataPoint.mType == DataPoint.TYPE_STRING) {
             Log.d(TAG, "string     :" + dataPoint.mData);
         } else {
             Log.d(TAG, "value      :" + dataPoint.mData + "(" + dataPoint.mData + ")");
         }
-    }
-
-    private void dumpMediaAttribute(TuyaIotGateway.MediaAttribute attribute) {
-        if (attribute == null) {
-            return;
-        }
-        Log.d(TAG, "mId             :" + attribute.mId);
-        Log.d(TAG, "mDecodeType     :" + attribute.mDecodeType);
-        Log.d(TAG, "mLength         :" + attribute.mLength);
-        Log.d(TAG, "mDuration       :" + attribute.mDuration);
-        Log.d(TAG, "mMediaType      :" + attribute.mMediaType);
-        Log.d(TAG, "mUrl            :" + attribute.mUrl);
-        Log.d(TAG, "mFollowAction   :" + attribute.mFollowAction);
-        Log.d(TAG, "mSessionId      :" + attribute.mSessionId);
-        Log.d(TAG, "mHttpMethod     :" + attribute.mHttpMethod);
-        Log.d(TAG, "mRequestBody    :" + attribute.mRequestBody);
-        Log.d(TAG, "mTaskType       :" + attribute.mTaskType);
-        Log.d(TAG, "mCallbackValue  :" + attribute.mCallbackValue);
-        Log.d(TAG, "mPhoneNumber    :" + attribute.mPhoneNumber);
     }
 
     private static void hexdump(byte[] data) {

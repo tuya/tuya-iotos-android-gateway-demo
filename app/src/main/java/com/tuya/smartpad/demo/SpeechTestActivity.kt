@@ -1,12 +1,11 @@
-package com.tuya.smart.android.demo.speech
+package com.tuya.smartpad.demo
 
 import android.app.Activity
 import android.os.Bundle
 import android.util.Log
-import com.tuya.smart.iotgateway.gateway.TuyaIotGateway
-import com.tuya.smart.iotgateway.speech.OnSpeechCallback
-import com.tuya.smart.iotgateway.speech.SpeechHelper
-import com.tuya.smartpad.demo.R
+import com.tuya.libvoice.SpeechHelper
+import com.tuya.libvoice.TuyaVoiceSdk
+import com.tuya.libvoice.interfaces.SpeechCallback
 import kotlinx.android.synthetic.main.activity_speach_test.*
 
 class SpeechTestActivity : Activity() {
@@ -25,7 +24,8 @@ class SpeechTestActivity : Activity() {
 
     private fun init() {
         try {
-            helper = SpeechHelper(this, "/sdcard/tuya_speech_config/", object : OnSpeechCallback {
+            helper = SpeechHelper(this, "/sdcard/tuya_speech_config/", "/sdcard/tuya_speech_audio/"
+                    , object : SpeechCallback {
                 override fun onDeInitComplete() {
                     TODO("SpeechHelper closed successfully.")
                 }
@@ -83,9 +83,10 @@ class SpeechTestActivity : Activity() {
             return
         }
 
+        TuyaVoiceSdk.getInstance().init(helper)
+
         helper?.start()
 
-        TuyaIotGateway.getInstance().setSpeechHandler(helper?.getHandler())
     }
 
     override fun onDestroy() {
