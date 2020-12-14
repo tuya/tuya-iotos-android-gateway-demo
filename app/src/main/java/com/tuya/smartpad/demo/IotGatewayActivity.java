@@ -234,24 +234,6 @@ public class IotGatewayActivity extends Activity {
             String address = info.getMacAddress();
             return address;
         }
-
-        @Override
-        public void onZigbeeServiceDied() {
-            // zigbee has died, restart app
-            Log.d(TAG, "onZigbeeServiceDied");
-            doRebootApplicaion();
-        }
-
-        @Override
-        public void onZigbeeError() {
-            //zigbee went wrong
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(mContext, "zigbee error, please check zigbee module", Toast.LENGTH_LONG).show();
-                }
-            });
-        }
     };
 
     private void setupLog() {
