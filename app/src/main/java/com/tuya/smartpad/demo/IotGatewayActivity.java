@@ -142,7 +142,7 @@ public class IotGatewayActivity extends Activity {
         config.mAuthKey ="authkey";
         config.mVersion = "1.0.0";
         config.mPackageName = getPackageName();
-        config.mSerialPort = "/dev/ttyS3";
+        config.mSerialPort = "/dev/ttyS5";
 
         config.mTempDir = tmpDir;
         config.mBinDir = binDir;
